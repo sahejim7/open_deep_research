@@ -1,36 +1,25 @@
-# Use Python 3.11 as base image
+# Use an official Python runtime as a parent image
 FROM python:3.11-slim
 
-# Set working directory
+# Set the working directory in the container
 WORKDIR /app
 
-# Install system dependencies
-RUN apt-get update && apt-get install -y \
-    git \
-    curl \
-    build-essential \
-    && rm -rf /var/lib/apt/lists/*
-
-# Install uv for faster package management
+# Install uv for fast package management
 RUN pip install uv
 
-# Copy project files
+# Copy the dependency files
+COPY pyproject.toml uv.lock ./
+
+# Install project dependencies.
+RUN uv sync --no-cache
+
+# Copy the rest of the application code into the container
 COPY . .
 
-# Install dependencies
-RUN uv pip install --system -r pyproject.toml
+# Let Railway set the port via the $PORT environment variable
+EXPOSE 8080
 
-# Install langgraph-cli
-RUN uv pip install --system "langgraph-cli[inmem]"
-
-# Expose the port
-EXPOSE $PORT
-
-# Set environment variables
-ENV PYTHONPATH=/app
-
-# Create startup script
-RUN echo '#!/bin/bash\nuvx --from "langgraph-cli[inmem]" --with-editable . --python 3.11 langgraph dev --host 0.0.0.0 --port ${PORT:-2024} --allow-blocking' > /app/start.sh && chmod +x /app/start.sh
-
-# Command to run the application
-CMD ["/app/start.sh"]
+# Define the command to run your app
+# We use --host 0.0.0.0 to make it accessible
+# Railway will automatically provide the $PORT variable
+CMD ["langgraph", "dev", "--host", "0.0.0.0", "--port", "8080"]
