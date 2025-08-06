@@ -7,12 +7,15 @@ WORKDIR /app
 # Install uv for fast package management
 RUN pip install uv
 
-# --- FIX IS HERE ---
-# Copy ALL project files first, including the src directory.
+# Copy all project files into the container first
 COPY . .
 
-# Now that all files are present, install dependencies.
-# This will find the pyproject.toml and the src directory correctly.
+# --- NEW FIX IS HERE ---
+# Explicitly add the project's root and src directories to the PYTHONPATH.
+# This ensures Python and setuptools can always find your modules.
+ENV PYTHONPATH="${PYTHONPATH}:/app:/app/src"
+
+# Now, install all dependencies. It will correctly find the local project.
 RUN uv sync --no-cache
 
 # Let Railway set the port via the $PORT environment variable
