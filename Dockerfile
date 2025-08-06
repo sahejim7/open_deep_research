@@ -1,36 +1,21 @@
-# Use Python 3.11 as base image
+# Use a standard Python 3.11 base image
 FROM python:3.11-slim
 
-# Set working directory
+# Set the working directory
 WORKDIR /app
 
-# Install system dependencies
-RUN apt-get update && apt-get install -y \
-    git \
-    curl \
-    build-essential \
-    && rm -rf /var/lib/apt/lists/*
-
-# Install uv for faster package management
+# Install uv for package management
 RUN pip install uv
 
-# Copy project files
+# Copy all project files into the container
 COPY . .
 
-# Install dependencies
-RUN uv pip install --system -r pyproject.toml
+# Correctly install all dependencies from pyproject.toml in editable mode
+RUN uv pip install -e .
 
-# Install langgraph-cli
-RUN uv pip install --system "langgraph-cli[inmem]"
+# Expose the port that Railway will use
+EXPOSE 8080
 
-# Expose the port
-EXPOSE $PORT
-
-# Set environment variables
-ENV PYTHONPATH=/app
-
-# Create startup script
-RUN echo '#!/bin/bash\nuvx --from "langgraph-cli[inmem]" --with-editable . --python 3.11 langgraph dev --host 0.0.0.0 --port ${PORT:-2024} --allow-blocking' > /app/start.sh && chmod +x /app/start.sh
-
-# Command to run the application
-CMD ["/app/start.sh"]
+# Command to run the production server, pointing to our new main.py file.
+# This is the standard, stable way to run the application.
+CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8080"]
