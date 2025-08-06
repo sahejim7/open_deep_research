@@ -881,28 +881,46 @@ def get_config_value(value):
         return value.value
 
 def get_api_key_for_model(model_name: str, config: RunnableConfig):
-    """Get API key for a specific model from environment or config."""
+    """Get API key and optional base URL for a specific model from environment or config."""
     should_get_from_config = os.getenv("GET_API_KEYS_FROM_CONFIG", "false")
     model_name = model_name.lower()
+    
+    # --- START OF MODIFICATION ---
+    # Prepare a dictionary to hold model arguments
+    model_kwargs = {}
+
     if should_get_from_config.lower() == "true":
+        # This part is for a different configuration style, we will leave it as is.
         api_keys = config.get("configurable", {}).get("apiKeys", {})
         if not api_keys:
             return None
         if model_name.startswith("openai:"):
-            return api_keys.get("OPENAI_API_KEY")
+            model_kwargs['api_key'] = api_keys.get("OPENAI_API_KEY")
+            if os.getenv("OPENAI_API_BASE"):
+                model_kwargs['base_url'] = os.getenv("OPENAI_API_BASE")
         elif model_name.startswith("anthropic:"):
-            return api_keys.get("ANTHROPIC_API_KEY")
+            model_kwargs['api_key'] = api_keys.get("ANTHROPIC_API_KEY")
         elif model_name.startswith("google"):
-            return api_keys.get("GOOGLE_API_KEY")
-        return None
+            model_kwargs['api_key'] = api_keys.get("GOOGLE_API_KEY")
+        elif model_name.startswith("groq"):
+            model_kwargs['api_key'] = os.getenv("GROQ_API_KEY")
     else:
+        # This is the part we are using for Railway deployment
         if model_name.startswith("openai:"): 
-            return os.getenv("OPENAI_API_KEY")
+            model_kwargs['api_key'] = os.getenv("OPENAI_API_KEY")
+            # If OPENAI_API_BASE is set, we add it to the kwargs. THIS IS THE FIX.
+            if os.getenv("OPENAI_API_BASE"):
+                model_kwargs['base_url'] = os.getenv("OPENAI_API_BASE")
         elif model_name.startswith("anthropic:"):
-            return os.getenv("ANTHROPIC_API_KEY")
+            model_kwargs['api_key'] = os.getenv("ANTHROPIC_API_KEY")
         elif model_name.startswith("google"):
-            return os.getenv("GOOGLE_API_KEY")
-        return None
+            model_kwargs['api_key'] = os.getenv("GOOGLE_API_KEY")
+        elif model_name.startswith("groq"):
+            model_kwargs['api_key'] = os.getenv("GROQ_API_KEY")
+            
+    # Return the dictionary of arguments, or None if no keys were found
+    return model_kwargs if model_kwargs.get('api_key') else None
+    # --- END OF MODIFICATION ---
 
 def get_tavily_api_key(config: RunnableConfig):
     """Get Tavily API key from environment or config."""
