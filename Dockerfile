@@ -10,15 +10,11 @@ RUN pip install uv
 # Copy all project files into the container
 COPY . .
 
-# Install all dependencies into the system environment, as required by uv in Docker.
+# Correctly install all dependencies from pyproject.toml in editable mode into the system environment
 RUN uv pip install -e . --system
 
 # Expose the port that Railway will use
 EXPOSE 8080
 
-# Create the startup script that correctly handles environment variables.
-# This was your correct solution.
-RUN echo '#!/bin/bash\nlanggraph dev --host 0.0.0.0 --port ${PORT:-8080}' > /app/start.sh && chmod +x /app/start.sh
-
-# Command to run the application using the shell script.
-CMD ["/app/start.sh"]
+# Command to run the production server, pointing to our new main.py file.
+CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8080"]
