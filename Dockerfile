@@ -17,6 +17,6 @@ RUN uv pip install -e . --system "langgraph-cli[inmem]"
 # Expose the port that Railway will use
 EXPOSE 8080
 
-# Command to run the development server, with the port hardcoded to 8080.
-# This avoids all shell variable issues.
-CMD ["langgraph", "dev", "--host", "0.0.0.0", "--port", "8080"]
+# Command to run the development server, explicitly pointing to the config file.
+# This forces the server to load your agent and create the correct endpoints.
+CMD ["langgraph", "dev", "--host", "0.0.0.0", "--port", "8080", "--config", "langgraph.json"]
