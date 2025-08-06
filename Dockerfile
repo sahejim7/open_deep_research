@@ -4,33 +4,19 @@ FROM python:3.11-slim
 # Set working directory
 WORKDIR /app
 
-# Install system dependencies
-RUN apt-get update && apt-get install -y \
-    git \
-    curl \
-    build-essential \
-    && rm -rf /var/lib/apt/lists/*
-
 # Install uv for faster package management
 RUN pip install uv
 
 # Copy project files
 COPY . .
 
-# Install dependencies into the system environment
-RUN uv pip install --system -r pyproject.toml
-
-# Install langgraph-cli
-RUN uv pip install --system "langgraph-cli[inmem]"
+# Install dependencies into the system, including langgraph-cli and the project itself.
+# We KNOW this installation method works from your previous success.
+RUN uv pip install --system -e . "langgraph-cli[inmem]"
 
 # Expose the port
 EXPOSE 8080
 
-# Set environment variables
-ENV PYTHONPATH=/app
-
-# Create startup script
-RUN echo '#!/bin/bash\nuvx --from "langgraph-cli[inmem]" --with-editable . --python 3.11 langgraph dev --host 0.0.0.0 --port ${PORT:-8080} --allow-blocking' > /app/start.sh && chmod +x /app/start.sh
-
-# Command to run the application
-CMD ["/app/start.sh"]
+# Command to run the application directly.
+# This is simple and will correctly inherit the CORS_ORIGINS variable from Railway.
+CMD ["langgraph", "dev", "--host", "0.0.0.0", "--port", "${PORT:-8080}"]
