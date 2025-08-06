@@ -19,6 +19,6 @@ RUN uv sync --no-cache
 # Let Railway set the port via the $PORT environment variable
 EXPOSE 8080
 
-# --- FIX IS HERE ---
-# Use "uv run" to execute the command within the managed environment
-CMD ["uv", "run", "langgraph", "dev", "--host", "0.0.0.0", "--port", "8080"]
+# --- FINAL FIX IS HERE ---
+# Use "uv run", but add "--no-reload" to prevent the dev server from crashing.
+CMD ["uv", "run", "langgraph", "dev", "--host", "0.0.0.0", "--port", "8080", "--no-reload"]
