@@ -29,8 +29,8 @@ EXPOSE $PORT
 # Set environment variables
 ENV PYTHONPATH=/app
 
-# Create startup script
-RUN echo '#!/bin/bash\nuvx --from "langgraph-cli[inmem]" --with-editable . --python 3.11 langgraph dev --host 0.0.0.0 --port ${PORT:-2024} --allow-blocking' > /app/start.sh && chmod +x /app/start.sh
+# Create startup script that uses Railway's PORT
+RUN echo '#!/bin/bash\nport=${PORT:-8080}\necho "Starting on port $port"\nuvx --from "langgraph-cli[inmem]" --with-editable . --python 3.11 langgraph dev --host 0.0.0.0 --port $port --allow-blocking' > /app/start.sh && chmod +x /app/start.sh
 
 # Command to run the application
 CMD ["/app/start.sh"]
