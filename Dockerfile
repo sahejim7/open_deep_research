@@ -1,26 +1,36 @@
-# Use an official Python runtime as a parent image
+# Use Python 3.11 as base image
 FROM python:3.11-slim
 
-# Set the working directory in the container
+# Set working directory
 WORKDIR /app
 
-# Install uv for fast package management
+# Install system dependencies
+RUN apt-get update && apt-get install -y \
+    git \
+    curl \
+    build-essential \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install uv for faster package management
 RUN pip install uv
 
-# Copy all project files into the container first
+# Copy project files
 COPY . .
 
-# Explicitly add the project's root and src directories to the PYTHONPATH.
-ENV PYTHONPATH="${PYTHONPATH}:/app:/app/src"
+# Install dependencies
+RUN uv pip install --system -r pyproject.toml
 
-# Now, install all dependencies.
-RUN uv sync --no-cache
+# Install langgraph-cli
+RUN uv pip install --system "langgraph-cli[inmem]"
 
-# Let Railway set the port via the $PORT environment variable
-EXPOSE 8080
+# Expose the port
+EXPOSE $PORT
 
-# --- FINAL FIX IS HERE ---
-# Run the application directly with the production server 'uvicorn'.
-# This bypasses the unstable development CLI.
-# The path 'open_deep_research.deep_researcher:deep_researcher' points to your main application object.
-CMD ["uvicorn", "open_deep_research.deep_researcher:deep_researcher", "--host", "0.0.0.0", "--port", "8080"]
+# Set environment variables
+ENV PYTHONPATH=/app
+
+# Create startup script
+RUN echo '#!/bin/bash\nuvx --from "langgraph-cli[inmem]" --with-editable . --python 3.11 langgraph dev --host 0.0.0.0 --port ${PORT:-2024} --allow-blocking' > /app/start.sh && chmod +x /app/start.sh
+
+# Command to run the application
+CMD ["/app/start.sh"]
