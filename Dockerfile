@@ -10,16 +10,15 @@ RUN pip install uv
 # Copy all project files into the container first
 COPY . .
 
-# --- NEW FIX IS HERE ---
 # Explicitly add the project's root and src directories to the PYTHONPATH.
-# This ensures Python and setuptools can always find your modules.
 ENV PYTHONPATH="${PYTHONPATH}:/app:/app/src"
 
-# Now, install all dependencies. It will correctly find the local project.
+# Now, install all dependencies.
 RUN uv sync --no-cache
 
 # Let Railway set the port via the $PORT environment variable
 EXPOSE 8080
 
-# Define the command to run your app
-CMD ["langgraph", "dev", "--host", "0.0.0.0", "--port", "8080"]
+# --- FIX IS HERE ---
+# Use "uv run" to execute the command within the managed environment
+CMD ["uv", "run", "langgraph", "dev", "--host", "0.0.0.0", "--port", "8080"]
