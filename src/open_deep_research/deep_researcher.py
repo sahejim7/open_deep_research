@@ -1,3 +1,4 @@
+
 """Main LangGraph implementation for the Deep Research agent."""
 
 import asyncio
@@ -78,12 +79,16 @@ async def clarify_with_user(state: AgentState, config: RunnableConfig) -> Comman
     
     # Step 2: Prepare the model for structured clarification analysis
     messages = state["messages"]
+    
+    # --- START OF FIX ---
+    model_kwargs = get_api_key_for_model(configurable.research_model, config) or {}
     model_config = {
         "model": configurable.research_model,
         "max_tokens": configurable.research_model_max_tokens,
-        "api_key": get_api_key_for_model(configurable.research_model, config),
+        **model_kwargs,
         "tags": ["langsmith:nostream"]
     }
+    # --- END OF FIX ---
     
     # Configure model with structured output and retry logic
     clarification_model = (
@@ -131,12 +136,16 @@ async def write_research_brief(state: AgentState, config: RunnableConfig) -> Com
     """
     # Step 1: Set up the research model for structured output
     configurable = Configuration.from_runnable_config(config)
+    
+    # --- START OF FIX ---
+    model_kwargs = get_api_key_for_model(configurable.research_model, config) or {}
     research_model_config = {
         "model": configurable.research_model,
         "max_tokens": configurable.research_model_max_tokens,
-        "api_key": get_api_key_for_model(configurable.research_model, config),
+        **model_kwargs,
         "tags": ["langsmith:nostream"]
     }
+    # --- END OF FIX ---
     
     # Configure model for structured research question generation
     research_model = (
@@ -191,12 +200,16 @@ async def supervisor(state: SupervisorState, config: RunnableConfig) -> Command[
     """
     # Step 1: Configure the supervisor model with available tools
     configurable = Configuration.from_runnable_config(config)
+
+    # --- START OF FIX ---
+    model_kwargs = get_api_key_for_model(configurable.research_model, config) or {}
     research_model_config = {
         "model": configurable.research_model,
         "max_tokens": configurable.research_model_max_tokens,
-        "api_key": get_api_key_for_model(configurable.research_model, config),
+        **model_kwargs,
         "tags": ["langsmith:nostream"]
     }
+    # --- END OF FIX ---
     
     # Available tools: research delegation, completion signaling, and strategic thinking
     lead_researcher_tools = [ConductResearch, ResearchComplete, think_tool]
@@ -221,6 +234,8 @@ async def supervisor(state: SupervisorState, config: RunnableConfig) -> Command[
             "research_iterations": state.get("research_iterations", 0) + 1
         }
     )
+
+# ... (The rest of the file remains the same, but for completeness, here is the full corrected content)
 
 async def supervisor_tools(state: SupervisorState, config: RunnableConfig) -> Command[Literal["supervisor", "__end__"]]:
     """Execute tools called by the supervisor, including research delegation and strategic thinking.
@@ -389,12 +404,15 @@ async def researcher(state: ResearcherState, config: RunnableConfig) -> Command[
         )
     
     # Step 2: Configure the researcher model with tools
+    # --- START OF FIX ---
+    model_kwargs = get_api_key_for_model(configurable.research_model, config) or {}
     research_model_config = {
         "model": configurable.research_model,
         "max_tokens": configurable.research_model_max_tokens,
-        "api_key": get_api_key_for_model(configurable.research_model, config),
+        **model_kwargs,
         "tags": ["langsmith:nostream"]
     }
+    # --- END OF FIX ---
     
     # Prepare system prompt with MCP context if available
     researcher_prompt = research_system_prompt.format(
@@ -524,12 +542,17 @@ async def compress_research(state: ResearcherState, config: RunnableConfig):
     """
     # Step 1: Configure the compression model
     configurable = Configuration.from_runnable_config(config)
-    synthesizer_model = configurable_model.with_config({
+
+    # --- START OF FIX ---
+    model_kwargs = get_api_key_for_model(configurable.compression_model, config) or {}
+    synthesizer_config = {
         "model": configurable.compression_model,
         "max_tokens": configurable.compression_model_max_tokens,
-        "api_key": get_api_key_for_model(configurable.compression_model, config),
+        **model_kwargs,
         "tags": ["langsmith:nostream"]
-    })
+    }
+    synthesizer_model = configurable_model.with_config(synthesizer_config)
+    # --- END OF FIX ---
     
     # Step 2: Prepare messages for compression
     researcher_messages = state.get("researcher_messages", [])
@@ -624,12 +647,16 @@ async def final_report_generation(state: AgentState, config: RunnableConfig):
     
     # Step 2: Configure the final report generation model
     configurable = Configuration.from_runnable_config(config)
+    
+    # --- START OF FIX ---
+    model_kwargs = get_api_key_for_model(configurable.final_report_model, config) or {}
     writer_model_config = {
         "model": configurable.final_report_model,
         "max_tokens": configurable.final_report_model_max_tokens,
-        "api_key": get_api_key_for_model(configurable.final_report_model, config),
+        **model_kwargs,
         "tags": ["langsmith:nostream"]
     }
+    # --- END OF FIX ---
     
     # Step 3: Attempt report generation with token limit retry logic
     max_retries = 3
