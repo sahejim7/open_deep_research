@@ -20,5 +20,7 @@ RUN uv sync --no-cache
 EXPOSE 8080
 
 # --- FINAL FIX IS HERE ---
-# Use "uv run", but add "--no-reload" to prevent the dev server from crashing.
-CMD ["uv", "run", "langgraph", "dev", "--host", "0.0.0.0", "--port", "8080", "--no-reload"]
+# Run the application directly with the production server 'uvicorn'.
+# This bypasses the unstable development CLI.
+# The path 'open_deep_research.deep_researcher:deep_researcher' points to your main application object.
+CMD ["uvicorn", "open_deep_research.deep_researcher:deep_researcher", "--host", "0.0.0.0", "--port", "8080"]
